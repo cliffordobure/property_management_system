@@ -8,12 +8,16 @@ dotenv.config();
 const app = express();
 
 // Middleware
-// CORS configuration - allow all origins in production, specific origins in development
+// CORS configuration - allow frontend origins
+const defaultProductionOrigins = [
+  'https://property-management-system-gray.vercel.app',
+  'https://property-management-system-6xtr653tq.vercel.app'
+];
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-      ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
-      : '*' // Allow all in production if FRONTEND_URL not set
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.FRONTEND_URL
+      ? [...defaultProductionOrigins, ...process.env.FRONTEND_URL.split(',').map(url => url.trim())]
+      : defaultProductionOrigins
     : ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true,
   optionsSuccessStatus: 200
