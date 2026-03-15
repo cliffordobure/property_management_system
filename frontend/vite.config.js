@@ -20,8 +20,9 @@ try {
 
 // Load env so production build uses .env.production (e.g. Render backend URL)
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
-const env = loadEnv(mode, process.cwd(), '')
-const apiUrl = env.REACT_APP_API_URL || env.VITE_API_URL || 'http://localhost:5000/api'
+const env = loadEnv(mode, resolve(__dirname), '')
+const defaultProductionApi = 'https://property-management-system-w07h.onrender.com/api'
+const apiUrl = env.REACT_APP_API_URL || env.VITE_API_URL || (mode === 'production' ? defaultProductionApi : 'http://localhost:5000/api')
 
 // https://vitejs.dev/config/
 export default defineConfig({
