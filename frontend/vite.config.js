@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import { fileURLToPath } from 'url'
@@ -18,8 +18,10 @@ try {
   // Ignore errors - file might not exist
 }
 
-// Expose process.env.REACT_APP_API_URL in browser (Vite doesn't provide process by default)
-const apiUrl = process.env.REACT_APP_API_URL || process.env.VITE_API_URL || 'http://localhost:5000/api'
+// Load env so production build uses .env.production (e.g. Render backend URL)
+const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
+const env = loadEnv(mode, process.cwd(), '')
+const apiUrl = env.REACT_APP_API_URL || env.VITE_API_URL || 'http://localhost:5000/api'
 
 // https://vitejs.dev/config/
 export default defineConfig({
