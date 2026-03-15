@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: turbine-backend
+    env: node
+    region: oregon  # Change to your preferred region
+    plan: free  # Change to 'starter' or 'standard' for production
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # Add these via Render Dashboard instead of here for security:
+      # - key: MONGODB_URI
+      #   value: your_mongodb_connection_string
+      # - key: JWT_SECRET
+      #   value: your_jwt_secret
+      # - key: ENCRYPTION_KEY
+      #   value: your_encryption_key
