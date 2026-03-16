@@ -84,7 +84,22 @@ const propertySchema = new mongoose.Schema({
     name: String,
     amount: Number
   }],
-  // Property verification
+  // Advertise-only listing: pay to list (no full management)
+  listingType: {
+    type: String,
+    enum: ['full_management', 'advertise_only'],
+    default: null // null = inherit from organization
+  },
+  listingFeeStatus: {
+    type: String,
+    enum: ['pending', 'paid'],
+    default: 'pending'
+  },
+  listingFeePaidAt: {
+    type: Date,
+    default: null
+  },
+  // Property verification (for full_management; for advertise_only, listingFeeStatus=paid means listed)
   isVerified: {
     type: Boolean,
     default: false

@@ -39,8 +39,8 @@ const TutorialsPage = () => {
   const tutorials = [
     {
       id: 1,
-      title: 'Welcome to Turbine - Getting Started',
-      description: 'Learn the basics of Turbine property management system and how to navigate the dashboard.',
+      title: 'Welcome to Fancyfy - Getting Started',
+      description: 'Learn the basics of Fancyfy property management system and how to navigate the dashboard.',
       category: 'getting-started',
       videoId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID or URL
       duration: '5:32',
@@ -189,7 +189,7 @@ const TutorialsPage = () => {
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold mb-1">Learn Turbine Step by Step</h2>
+                <h2 className="text-2xl font-bold mb-1">Learn Fancyfy Step by Step</h2>
                 <p className="text-blue-100">Watch video tutorials to master property management</p>
               </div>
             </div>

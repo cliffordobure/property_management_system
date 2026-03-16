@@ -49,6 +49,7 @@ import ManagersPage from './pages/ManagersPage.jsx';
 import OverdueItemsPage from './pages/OverdueItemsPage.jsx';
 import BankAccountsPage from './pages/BankAccountsPage.jsx';
 import ClaimsComplaintsPage from './pages/ClaimsComplaintsPage.jsx';
+import ListingFeesPage from './pages/ListingFeesPage.jsx';
 
 function App() {
   const dispatch = useDispatch();
@@ -107,6 +108,14 @@ function App() {
           element={
             <PrivateRoute allowedRoles={['manager', 'landlord', 'admin']}>
               <AddPropertyPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/listing-fees"
+          element={
+            <PrivateRoute allowedRoles={['manager', 'landlord', 'admin']}>
+              <ListingFeesPage />
             </PrivateRoute>
           }
         />

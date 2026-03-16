@@ -12,7 +12,7 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, role, firstName, lastName, phone } = req.body;
+    const { email, password, role, firstName, lastName, phone, listingType } = req.body;
 
     if (!email || !password || !role) {
       return res.status(400).json({ message: 'Email, password, and role are required' });
@@ -41,9 +41,11 @@ router.post('/register', async (req, res) => {
 
     // Create organization for landlord only (managers are created by landlords)
     if (role === 'landlord') {
+      const orgListingType = ['full_management', 'advertise_only'].includes(listingType) ? listingType : 'full_management';
       const organization = new Organization({
         name: `${firstName || 'Organization'}'s Properties`,
-        ownerId: user._id
+        ownerId: user._id,
+        listingType: orgListingType
       });
       await organization.save();
       user.organizationId = organization._id;
@@ -69,6 +71,7 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    const org = role === 'landlord' ? await Organization.findById(user.organizationId).select('listingType').lean() : null;
     res.status(201).json({
       token,
       user: {
@@ -78,6 +81,7 @@ router.post('/register', async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         organizationId: user.organizationId,
+        listingType: org?.listingType || null,
         isFirstTimeLogin: user.isFirstTimeLogin,
         onboardingCompleted: user.onboardingCompleted
       }
@@ -194,6 +198,12 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    let listingType = null;
+    if (user.organizationId) {
+      const org = await Organization.findById(user.organizationId).select('listingType').lean();
+      listingType = org?.listingType || null;
+    }
+
     res.json({
       token,
       user: {
@@ -203,6 +213,7 @@ router.post('/login', async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         organizationId: user.organizationId,
+        listingType,
         isFirstTimeLogin: user.isFirstTimeLogin,
         onboardingCompleted: user.onboardingCompleted
       }
@@ -267,7 +278,11 @@ router.put('/onboarding/complete', auth, async (req, res) => {
 // Get current user
 router.get('/me', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id).select('-password').lean();
+    if (user.organizationId) {
+      const org = await Organization.findById(user.organizationId).select('listingType').lean();
+      user.listingType = org?.listingType || null;
+    }
     res.json({ user });
   } catch (error) {
     console.error('Get user error:', error);

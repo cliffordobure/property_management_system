@@ -15,8 +15,11 @@ const PreVisit = require('../models/PreVisit');
 const Complaint = require('../models/Complaint');
 const Claim = require('../models/Claim');
 const PropertyGroup = require('../models/PropertyGroup');
+const ListingFee = require('../models/ListingFee');
 const fs = require('fs');
 const { auth, requireRole } = require('../middleware/auth');
+
+const LISTING_FEE_AMOUNT = parseInt(process.env.LISTING_FEE_AMOUNT || '5000', 10);
 
 const router = express.Router();
 
@@ -144,29 +147,41 @@ router.post('/', auth, requireRole('manager', 'landlord', 'admin'), async (req, 
       notes,
       paymentInstructions,
       otherRecurringBills,
-      agreedToPricing // Frontend should send this
+      agreedToPricing, // Frontend: for full_management
+      agreedToListingFee // Frontend: for advertise_only
     } = req.body;
 
     if (!propertyName || !numberOfUnits || !city) {
       return res.status(400).json({ message: 'Property name, number of units, and city are required' });
     }
 
-    // Calculate pricing based on number of units
-    const calculatedPricing = await calculatePricing(parseInt(numberOfUnits));
-    
-    if (!calculatedPricing) {
-      return res.status(400).json({ message: 'Unable to calculate pricing. Please contact support.' });
+    const organization = await Organization.findById(req.user.organizationId).lean();
+    const isAdvertiseOnly = organization?.listingType === 'advertise_only';
+
+    if (isAdvertiseOnly) {
+      // Advertise-only: require agreement to listing fee only
+      if (agreedToListingFee !== true) {
+        return res.status(400).json({
+          message: 'You must agree to the listing fee to list this property.',
+          listingFeeAmount: LISTING_FEE_AMOUNT,
+          currency: 'KES'
+        });
+      }
+    } else {
+      // Full management: calculate subscription pricing and require agreement
+      const calculatedPricing = await calculatePricing(parseInt(numberOfUnits));
+      if (!calculatedPricing) {
+        return res.status(400).json({ message: 'Unable to calculate pricing. Please contact support.' });
+      }
+      if (agreedToPricing !== true) {
+        return res.status(400).json({
+          message: 'You must agree to the pricing plan before creating the property',
+          calculatedPricing
+        });
+      }
     }
 
-    // If pricing agreement is required (frontend should handle this, but check here too)
-    if (agreedToPricing !== true) {
-      return res.status(400).json({ 
-        message: 'You must agree to the pricing plan before creating the property',
-        calculatedPricing 
-      });
-    }
-
-    const property = new Property({
+    const propertyPayload = {
       organizationId: req.user.organizationId,
       propertyName,
       numberOfUnits: parseInt(numberOfUnits),
@@ -186,15 +201,35 @@ router.post('/', auth, requireRole('manager', 'landlord', 'admin'), async (req, 
       notes: notes || null,
       paymentInstructions: paymentInstructions || null,
       otherRecurringBills: otherRecurringBills || [],
-      isVerified: false, // New properties require verification
-      calculatedPricing
-    });
+      calculatedPricing: null
+    };
 
+    if (isAdvertiseOnly) {
+      propertyPayload.listingType = 'advertise_only';
+      propertyPayload.listingFeeStatus = 'pending';
+      propertyPayload.isVerified = false; // Becomes true when listing fee is paid
+    } else {
+      propertyPayload.isVerified = false;
+      propertyPayload.calculatedPricing = await calculatePricing(parseInt(numberOfUnits));
+    }
+
+    const property = new Property(propertyPayload);
     await property.save();
-    
-    // Notify all admins about the new property
-    await notifyAdminForVerification(property);
-    
+
+    if (isAdvertiseOnly) {
+      const listingFee = new ListingFee({
+        organizationId: req.user.organizationId,
+        propertyId: property._id,
+        amount: LISTING_FEE_AMOUNT,
+        currency: 'KES',
+        status: 'pending'
+      });
+      await listingFee.save();
+      property._doc.listingFee = { id: listingFee._id, amount: listingFee.amount, status: listingFee.status };
+    } else {
+      await notifyAdminForVerification(property);
+    }
+
     res.status(201).json(property);
   } catch (error) {
     console.error('Create property error:', error);

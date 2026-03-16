@@ -31,7 +31,7 @@ const TenantSidebar = ({ isOpen, onClose }) => {
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
       <div className="p-6 border-b border-blue-700">
-        <h1 className="text-2xl font-bold text-white">Turbine</h1>
+        <h1 className="text-2xl font-bold text-white">Fancyfy</h1>
         <p className="text-blue-200 text-sm mt-1">Tenant Portal</p>
       </div>
 

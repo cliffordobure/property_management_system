@@ -6,14 +6,19 @@ const { auth, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
 // Public route: Get available units for landing page (no auth required)
-// Only units from admin-verified properties are shown
+// Show units from: (1) admin-verified full_management properties, (2) advertise_only properties with paid listing fee
 router.get('/public/available', async (req, res) => {
   try {
     const { country, city, location, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Build query for properties: only verified (admin-approved) properties
-    const propertyQuery = { isVerified: true };
+    // Properties that can be shown: verified full_management OR advertise_only with listing fee paid
+    const propertyQuery = {
+      $or: [
+        { isVerified: true },
+        { listingType: 'advertise_only', listingFeeStatus: 'paid' }
+      ]
+    };
     
     // Handle country filter: match exact or include properties without country (treat as Kenya)
     if (country && country.trim()) {

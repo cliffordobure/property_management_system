@@ -31,7 +31,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
       <div className="p-6 border-b border-slate-700">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Turbine</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">Fancyfy</h1>
         <p className="text-slate-300 text-sm mt-0.5">Admin Portal</p>
       </div>
 

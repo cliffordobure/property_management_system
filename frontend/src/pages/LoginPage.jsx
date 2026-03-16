@@ -6,6 +6,7 @@ import { login, register, clearError } from '../store/slices/authSlice';
 const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loginType, setLoginType] = useState('manager'); // manager/landlord or tenant
+  const [landlordListingType, setLandlordListingType] = useState('full_management'); // full_management | advertise_only
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -66,14 +67,16 @@ const LoginPage = () => {
       // Only allow landlord and tenant registration
       // loginType 'manager' in registration context means 'landlord'
       const role = (loginType === 'manager' || loginType === 'landlord') ? 'landlord' : 'tenant';
-      await dispatch(register({
+      const payload = {
         email: formData.email,
         password: formData.password,
         role,
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone
-      }));
+      };
+      if (role === 'landlord') payload.listingType = landlordListingType;
+      await dispatch(register(payload));
     }
   };
 
@@ -81,7 +84,7 @@ const LoginPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600 mb-2">Turbine</h1>
+          <h1 className="text-3xl font-bold text-blue-600 mb-2">Fancyfy</h1>
           <p className="text-gray-600">Property Management System</p>
         </div>
 
@@ -139,12 +142,39 @@ const LoginPage = () => {
                 : 'Note: Managers must be created by landlords. Only Landlords and Tenants can register.'
               }
             </p>
-            {!isLogin && loginType === 'manager' && (
-              <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-800">
-                  <strong>Registering as Landlord:</strong> You will be able to create and manage properties. Managers can be added later from your dashboard.
+            {!isLogin && (loginType === 'manager' || loginType === 'landlord') && (
+              <>
+                <p className="text-sm text-gray-600 mt-3 mb-1">How do you want to use Fancyfy?</p>
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLandlordListingType('full_management')}
+                    className={`text-left py-2 px-4 rounded-lg border-2 font-medium transition ${
+                      landlordListingType === 'full_management'
+                        ? 'border-blue-600 bg-blue-50 text-blue-800'
+                        : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Manage my properties — Use the full system (tenants, invoices, reports).
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLandlordListingType('advertise_only')}
+                    className={`text-left py-2 px-4 rounded-lg border-2 font-medium transition ${
+                      landlordListingType === 'advertise_only'
+                        ? 'border-blue-600 bg-blue-50 text-blue-800'
+                        : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    Just list properties — Advertise only. Pay a one-time fee per property to list on Fancyfy.
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {landlordListingType === 'full_management'
+                    ? 'You can create properties, add tenants, and use invoices & reports. Managers can be added from your dashboard.'
+                    : 'You only list properties for visibility. No tenant or invoice management. A payment is required to list each property.'}
                 </p>
-              </div>
+              </>
             )}
           </div>
         </div>

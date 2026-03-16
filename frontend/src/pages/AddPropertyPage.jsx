@@ -11,7 +11,8 @@ const AddPropertyPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.properties);
-  const { token } = useSelector((state) => state.auth);
+  const { token, user } = useSelector((state) => state.auth);
+  const isAdvertiseOnly = user?.listingType === 'advertise_only';
 
   const [formData, setFormData] = useState({
     propertyName: '',
@@ -39,9 +40,19 @@ const AddPropertyPage = () => {
   const [pricingError, setPricingError] = useState(null);
   const [calculatingPricing, setCalculatingPricing] = useState(false);
   const [agreedToPricing, setAgreedToPricing] = useState(false);
+  const [listingFeeConfig, setListingFeeConfig] = useState(null);
+  const [agreedToListingFee, setAgreedToListingFee] = useState(false);
 
-  // Calculate pricing when numberOfUnits changes
+  // Fetch listing fee config for advertise_only
   useEffect(() => {
+    if (isAdvertiseOnly) {
+      axios.get(`${API_URL}/listing-fees/config`).then((res) => setListingFeeConfig(res.data)).catch(() => setListingFeeConfig({ amount: 5000, currency: 'KES' }));
+    }
+  }, [isAdvertiseOnly]);
+
+  // Calculate pricing when numberOfUnits changes (only for full_management)
+  useEffect(() => {
+    if (isAdvertiseOnly) return;
     const doCalculatePricing = async () => {
       if (formData.numberOfUnits && parseInt(formData.numberOfUnits) > 0) {
         setCalculatingPricing(true);
@@ -53,7 +64,7 @@ const AddPropertyPage = () => {
             { headers: { Authorization: `Bearer ${token}` } }
           );
           setCalculatedPricing(response.data.calculatedPricing);
-          setAgreedToPricing(false); // Reset agreement when pricing changes
+          setAgreedToPricing(false);
         } catch (error) {
           console.error('Error calculating pricing:', error);
           setCalculatedPricing(null);
@@ -69,9 +80,9 @@ const AddPropertyPage = () => {
       }
     };
 
-    const timeoutId = setTimeout(doCalculatePricing, 500); // Debounce
+    const timeoutId = setTimeout(doCalculatePricing, 500);
     return () => clearTimeout(timeoutId);
-  }, [formData.numberOfUnits, token]);
+  }, [formData.numberOfUnits, token, isAdvertiseOnly]);
 
   const handleChange = (e) => {
     setFormData({
@@ -102,12 +113,19 @@ const AddPropertyPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!agreedToPricing) {
-      alert('Please agree to the pricing plan before creating the property.');
-      return;
+
+    if (isAdvertiseOnly) {
+      if (!agreedToListingFee) {
+        alert('Please agree to the listing fee to list this property.');
+        return;
+      }
+    } else {
+      if (!agreedToPricing) {
+        alert('Please agree to the pricing plan before creating the property.');
+        return;
+      }
     }
-    
+
     const submitData = {
       ...formData,
       numberOfUnits: parseInt(formData.numberOfUnits),
@@ -124,14 +142,24 @@ const AddPropertyPage = () => {
       streetName: formData.streetName || null,
       companyName: formData.companyName || null,
       notes: formData.notes || null,
-      paymentInstructions: formData.paymentInstructions || null,
-      agreedToPricing: true
+      paymentInstructions: formData.paymentInstructions || null
     };
+    if (isAdvertiseOnly) {
+      submitData.agreedToListingFee = true;
+    } else {
+      submitData.agreedToPricing = true;
+    }
 
     const result = await dispatch(createProperty(submitData));
     if (!result.error) {
-      alert('Property created successfully! It will be reviewed by an admin before tenants can access it.');
-      navigate('/dashboard');
+      const payload = result.payload || result;
+      if (isAdvertiseOnly && payload?.listingFee) {
+        alert('Property created. Pay the listing fee to make it visible on Fancyfy. You can pay from the Listing Fees page.');
+        navigate('/listing-fees');
+      } else {
+        alert('Property created successfully! It will be reviewed by an admin before tenants can access it.');
+        navigate('/dashboard');
+      }
     }
   };
 
@@ -458,61 +486,90 @@ const AddPropertyPage = () => {
             )}
           </div>
 
-          {/* Pricing Information */}
+          {/* Pricing or Listing Fee */}
           {formData.numberOfUnits && parseInt(formData.numberOfUnits) > 0 && (
             <div className="border-t pt-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Subscription Pricing</h2>
-              {calculatingPricing ? (
-                <div className="text-center py-4">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  <p className="mt-2 text-gray-600">Calculating pricing...</p>
-                </div>
-              ) : calculatedPricing ? (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">
-                        {calculatedPricing.planName?.toUpperCase() || 'PLAN'}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        For {formData.numberOfUnits} unit{parseInt(formData.numberOfUnits) !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-bold text-blue-600">
-                        {calculatedPricing.planPrice?.toLocaleString() || 'N/A'}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {calculatedPricing.currency || 'KES'} / {calculatedPricing.billingPeriod || 'month'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 mb-4">
-                    <p className="text-sm text-gray-700">
-                      <strong>Note:</strong> This property will require admin verification before tenants can access it. 
-                      You will be notified once it's verified.
+              {isAdvertiseOnly ? (
+                <>
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Listing Fee</h2>
+                  <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-6 mb-4">
+                    <p className="text-sm text-amber-900 mb-2">
+                      To list this property on Fancyfy so tenants can see it, a one-time listing fee is required.
                     </p>
+                    <p className="text-2xl font-bold text-amber-800">
+                      {listingFeeConfig?.amount?.toLocaleString() ?? '5,000'} {listingFeeConfig?.currency ?? 'KES'}
+                    </p>
+                    <p className="text-sm text-amber-800 mt-1">per property (one-time)</p>
+                    <label className="flex items-start gap-3 cursor-pointer mt-4">
+                      <input
+                        type="checkbox"
+                        checked={agreedToListingFee}
+                        onChange={(e) => setAgreedToListingFee(e.target.checked)}
+                        className="mt-1 w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                        required={isAdvertiseOnly}
+                      />
+                      <span className="text-sm text-gray-700">
+                        I agree to pay the listing fee of <strong>{listingFeeConfig?.amount?.toLocaleString() ?? '5,000'} {listingFeeConfig?.currency ?? 'KES'}</strong> to list this property. I will pay after creating the property to make it visible on Fancyfy.
+                      </span>
+                    </label>
                   </div>
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={agreedToPricing}
-                      onChange={(e) => setAgreedToPricing(e.target.checked)}
-                      className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      required
-                    />
-                    <span className="text-sm text-gray-700">
-                      I agree to the pricing plan of <strong>{calculatedPricing.planPrice?.toLocaleString()} {calculatedPricing.currency || 'KES'}</strong> per {calculatedPricing.billingPeriod || 'month'} for managing {formData.numberOfUnits} unit{parseInt(formData.numberOfUnits) !== 1 ? 's' : ''}. 
-                      I understand that this property must be verified by an admin before tenants can access it.
-                    </span>
-                  </label>
-                </div>
+                </>
               ) : (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800">
-                    {pricingError || 'Unable to calculate pricing. Please ensure the number of units is valid.'}
-                  </p>
-                </div>
+                <>
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Subscription Pricing</h2>
+                  {calculatingPricing ? (
+                    <div className="text-center py-4">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <p className="mt-2 text-gray-600">Calculating pricing...</p>
+                    </div>
+                  ) : calculatedPricing ? (
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900">
+                            {calculatedPricing.planName?.toUpperCase() || 'PLAN'}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            For {formData.numberOfUnits} unit{parseInt(formData.numberOfUnits) !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-3xl font-bold text-blue-600">
+                            {calculatedPricing.planPrice?.toLocaleString() || 'N/A'}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {calculatedPricing.currency || 'KES'} / {calculatedPricing.billingPeriod || 'month'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-lg p-4 mb-4">
+                        <p className="text-sm text-gray-700">
+                          <strong>Note:</strong> This property will require admin verification before tenants can access it.
+                          You will be notified once it's verified.
+                        </p>
+                      </div>
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={agreedToPricing}
+                          onChange={(e) => setAgreedToPricing(e.target.checked)}
+                          className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          required
+                        />
+                        <span className="text-sm text-gray-700">
+                          I agree to the pricing plan of <strong>{calculatedPricing.planPrice?.toLocaleString()} {calculatedPricing.currency || 'KES'}</strong> per {calculatedPricing.billingPeriod || 'month'} for managing {formData.numberOfUnits} unit{parseInt(formData.numberOfUnits) !== 1 ? 's' : ''}.
+                          I understand that this property must be verified by an admin before tenants can access it.
+                        </span>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <p className="text-sm text-yellow-800">
+                        {pricingError || 'Unable to calculate pricing. Please ensure the number of units is valid.'}
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -527,7 +584,11 @@ const AddPropertyPage = () => {
             </button>
             <button
               type="submit"
-              disabled={!agreedToPricing || calculatingPricing || loading || !calculatedPricing}
+              disabled={
+                isAdvertiseOnly
+                  ? !agreedToListingFee || loading
+                  : !agreedToPricing || calculatingPricing || loading || !calculatedPricing
+              }
               className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Property'}

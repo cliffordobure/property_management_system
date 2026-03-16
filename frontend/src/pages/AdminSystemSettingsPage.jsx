@@ -6,7 +6,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const AdminSystemSettingsPage = () => {
   const [settings, setSettings] = useState({
-    systemName: 'Turbine',
+    systemName: 'Fancyfy',
     maintenanceMode: false,
     allowRegistrations: true,
     defaultPlan: 'free',

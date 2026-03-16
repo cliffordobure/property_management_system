@@ -11,6 +11,12 @@ const organizationSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  /** full_management = use system for tenants, invoices, etc. advertise_only = just list properties; must pay per listing */
+  listingType: {
+    type: String,
+    enum: ['full_management', 'advertise_only'],
+    default: 'full_management'
+  },
   subscriptionPlan: {
     type: String,
     enum: ['free', 'basic', 'premium'],

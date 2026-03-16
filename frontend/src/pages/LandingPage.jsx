@@ -339,7 +339,7 @@ const LandingPage = () => {
       {/* Navigation Bar */}
       <nav className="bg-black text-white py-4">
         <div className="container mx-auto px-4 flex justify-between items-center">
-          <div className="text-2xl font-bold text-blue-400">TURBINE</div>
+          <div className="text-2xl font-bold text-blue-400">FANCYFY</div>
           <div className="hidden md:flex gap-6 items-center">
             <Link to="#" className="hover:text-blue-400 transition">Features</Link>
             <Link to="#" className="hover:text-blue-400 transition">Pricing</Link>
@@ -368,7 +368,7 @@ const LandingPage = () => {
                 <iframe
                   className="w-full h-full"
                   src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                  title="Turbine Property Management Demo"
+                  title="Fancyfy Property Management Demo"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -381,8 +381,11 @@ const LandingPage = () => {
               <h1 className="text-5xl font-bold text-gray-900 mb-4">
                 Stop Chasing Rent. <span className="text-blue-600">Start Earning More.</span>
               </h1>
-              <p className="text-lg text-gray-600 mb-8">
-                Easy-to-use Property Management System for landlords and property managers in Kenya and the rest of Africa.
+              <p className="text-lg text-gray-600 mb-4">
+                Fancyfy Property Management System — manage your properties or simply list them for rent. For landlords and property managers in Kenya and the rest of Africa.
+              </p>
+              <p className="text-sm text-gray-500 mb-8">
+                Choose full management (tenants, invoices, reports) or advertise only — pay a one-time fee per property to list on Fancyfy.
               </p>
               <div className="flex gap-4">
                 <Link

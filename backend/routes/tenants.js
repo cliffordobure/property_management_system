@@ -227,22 +227,44 @@ router.post('/', auth, requireRole('manager', 'landlord', 'admin'), upload.array
       }
     }
 
-    // Try to link to existing user account if email is provided
+    // Try to link to existing user account, or create one with default password (254firstname)
     let linkedUserId = null;
-    if (email) {
-      const existingUser = await User.findOne({ 
-        email: email.toLowerCase().trim(),
+    let tenantCreatedNewUser = false;
+    const emailTrimmed = email ? email.toLowerCase().trim() : null;
+    if (emailTrimmed) {
+      let existingUser = await User.findOne({
+        email: emailTrimmed,
         role: 'tenant'
       });
       if (existingUser) {
         linkedUserId = existingUser._id;
-        // Check if this user is already linked to another tenant
         const existingTenant = await Tenant.findOne({ userId: existingUser._id });
         if (existingTenant) {
-          return res.status(400).json({ 
-            message: 'This user account is already linked to another tenant record. Please use a different email or contact support.' 
+          return res.status(400).json({
+            message: 'This user account is already linked to another tenant record. Please use a different email or contact support.'
           });
         }
+      } else {
+        // Create a new user so the tenant can log in. Default password: 254 + firstName (e.g. 254John)
+        const defaultPassword = '254' + (firstName || '').trim();
+        if (defaultPassword.length <= 3) {
+          return res.status(400).json({
+            message: 'First name is required to generate tenant login credentials.'
+          });
+        }
+        const newUser = new User({
+          email: emailTrimmed,
+          password: defaultPassword,
+          role: 'tenant',
+          firstName: (firstName || '').trim() || null,
+          lastName: (lastName || '').trim() || null,
+          phone: phoneNumber || null,
+          isFirstTimeLogin: true,
+          onboardingCompleted: false
+        });
+        await newUser.save();
+        linkedUserId = newUser._id;
+        tenantCreatedNewUser = true;
       }
     }
 
@@ -274,7 +296,12 @@ router.post('/', auth, requireRole('manager', 'landlord', 'admin'), upload.array
     unit.isOccupied = true;
     await unit.save();
 
-    res.status(201).json(tenant);
+    const response = tenant.toObject();
+    if (tenantCreatedNewUser && emailTrimmed) {
+      response.initialLoginPassword = '254' + (firstName || '').trim();
+      response.message = 'Tenant created. They can log in with their email and password: 254' + (firstName || '').trim();
+    }
+    res.status(201).json(response);
   } catch (error) {
     console.error('Create tenant error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });

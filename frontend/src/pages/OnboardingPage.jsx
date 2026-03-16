@@ -11,7 +11,7 @@ const OnboardingPage = () => {
 
   const steps = [
     {
-      title: 'Welcome to Turbine',
+      title: 'Welcome to Fancyfy',
       content: 'Manage your properties efficiently with our comprehensive property management system.',
       icon: '🏢'
     },

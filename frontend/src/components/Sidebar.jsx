@@ -52,7 +52,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       }`}>
       {/* Logo */}
       <div className="p-6 border-b border-slate-700">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Turbine</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">Fancyfy</h1>
         <p className="text-slate-300 text-sm mt-0.5">Property Management</p>
       </div>
 
@@ -76,7 +76,27 @@ const Sidebar = ({ isOpen, onClose }) => {
             </Link>
           </li>
 
-          {/* Financials */}
+          {/* Listing Fees - for advertise-only landlords */}
+          {user?.listingType === 'advertise_only' && (
+            <li>
+              <Link
+                to="/listing-fees"
+                className={`flex items-center px-4 py-3 rounded-xl transition ${
+                  isActive('/listing-fees')
+                    ? 'bg-white/10 text-white'
+                    : 'text-slate-200 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Listing Fees
+              </Link>
+            </li>
+          )}
+
+          {/* Financials - hidden for advertise-only (they use Listing Fees only) */}
+          {user?.listingType !== 'advertise_only' && (
           <li>
             <button
               onClick={() => toggleSection('financials')}
@@ -154,8 +174,10 @@ const Sidebar = ({ isOpen, onClose }) => {
               </ul>
             )}
           </li>
+          )}
 
-          {/* Tenants */}
+          {/* Tenants - hidden for advertise-only */}
+          {user?.listingType !== 'advertise_only' && (
           <li>
             <Link
               to="/tenants"
@@ -171,6 +193,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               Tenants
             </Link>
           </li>
+          )}
 
           {/* Property/Unit */}
           <li>

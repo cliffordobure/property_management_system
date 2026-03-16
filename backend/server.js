@@ -57,6 +57,7 @@ app.use('/api/subscription-invoices', require('./routes/subscriptionInvoices'));
 app.use('/api/tenant-sms-permissions', require('./routes/tenantSMSPermissions'));
 app.use('/api/bank-accounts', require('./routes/bankAccounts'));
 app.use('/api/payment-verification', require('./routes/paymentVerification'));
+app.use('/api/listing-fees', require('./routes/listingFees'));
 
 // Public subscription plans endpoint (must be before admin routes)
 const SubscriptionPlan = require('./models/SubscriptionPlan');
