@@ -46,18 +46,18 @@ const Sidebar = ({ isOpen, onClose }) => {
           onClick={onClose}
         />
       )}
-      {/* Sidebar - dark background so white text is visible */}
-      <div className={`bg-slate-900 text-white w-64 min-h-screen flex flex-col fixed left-0 top-0 z-40 transition-transform duration-300 ${
+      {/* Sidebar - dark background so white text is visible; h-screen + min-h-0 on nav so it scrolls */}
+      <div className={`bg-slate-900 text-white w-64 h-screen flex flex-col fixed left-0 top-0 z-40 transition-transform duration-300 ${
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
-      {/* Logo */}
-      <div className="p-6 border-b border-slate-700">
+      {/* Logo - fixed at top */}
+      <div className="flex-shrink-0 p-6 border-b border-slate-700">
         <h1 className="text-2xl font-bold text-white tracking-tight">Fancyfy</h1>
         <p className="text-slate-300 text-sm mt-0.5">Property Management</p>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      {/* Navigation - scrollable when content overflows */}
+      <nav className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-4 px-3">
         <ul className="space-y-1">
           {/* Dashboard */}
           <li>
@@ -431,8 +431,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         </ul>
       </nav>
 
-      {/* Bottom Navigation */}
-      <div className="border-t border-blue-800 p-4 space-y-1">
+      {/* Bottom Navigation - fixed at bottom */}
+      <div className="flex-shrink-0 border-t border-slate-700 p-4 space-y-1">
         <Link
           to="/support"
           className={`flex items-center px-4 py-3 rounded-xl transition ${
